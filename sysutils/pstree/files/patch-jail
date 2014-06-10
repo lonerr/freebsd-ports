@@ -1,0 +1,35 @@
+--- pstree.c.orig	Fri Jun  8 19:45:23 2007
++++ pstree.c	Thu Jul 26 17:56:25 2007
+@@ -539,11 +539,28 @@
+   for (me = 0; me < NProc; me++) {
+     if (P[me].ppid == 0) return P[me].pid;
+   }
+-  /* OK, still nothing found. Maybe it is FreeBSD and won't show foreign
+-   * processes. So we also accept PPID == 1 */
+-  for (me = 0; me < NProc; me++) {
+-    if (P[me].ppid == 1) return P[me].pid;
++#if defined(__FreeBSD__)
++  /* OK, still nothing found. Maybe it is FreeBSD's jail and won't show host
++   * init process. So we'll made pseudo 'external init process' with PID == 1 */
++  NProc++;
++  P = realloc(P, NProc*sizeof(*P));
++  if (P == NULL) {
++    fprintf(stderr, "Problems with realloc.\n");
++    exit(1);
+   }
++  memset(&P[NProc-1], 0, sizeof(*P));
++  int i = NProc-1;
++  int num = sscanf("root 1 0 1 [external init process]", PSFORMAT, PSVARS);
++  if (num == PSVARSN) {
++#ifdef UID2USER	/* get username */
++    uid2user(P[i].uid, P[i].name, sizeof(P[i].name));
++#endif
++    P[i].parent = P[i].child = P[i].sister = -1;
++    P[i].print  = FALSE;
++    return P[i].pid;
++  }
++  NProc--;
++#endif
+   /* Still nothing. Maybe it is something like Solaris Zone. We'll take
+    * the process with PID == PPID */
+   for (me = 0; me < NProc; me++) {
