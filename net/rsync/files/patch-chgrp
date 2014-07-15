@@ -1,0 +1,69 @@
+diff --git a/main.c b/main.c
+index e7a13f7..80b39e0 100644
+--- a/main.c
++++ b/main.c
+@@ -95,7 +95,6 @@ extern struct file_list *first_flist;
+ extern filter_rule_list daemon_filter_list;
+ 
+ uid_t our_uid;
+-gid_t our_gid;
+ int am_receiver = 0;  /* Only set to 1 after the receiver/generator fork. */
+ int am_generator = 0; /* Only set to 1 after the receiver/generator fork. */
+ int local_server = 0;
+@@ -1528,7 +1527,6 @@ int main(int argc,char *argv[])
+ 
+ 	starttime = time(NULL);
+ 	our_uid = MY_UID();
+-	our_gid = MY_GID();
+ 	am_root = our_uid == 0;
+ 
+ 	memset(&stats, 0, sizeof(stats));
+diff --git a/uidlist.c b/uidlist.c
+index 641f147..5742cf1 100644
+--- a/uidlist.c
++++ b/uidlist.c
+@@ -33,7 +33,6 @@ extern int preserve_uid;
+ extern int preserve_gid;
+ extern int preserve_acls;
+ extern int numeric_ids;
+-extern gid_t our_gid;
+ extern char *usermap;
+ extern char *groupmap;
+ 
+@@ -157,6 +156,7 @@ static int is_in_group(gid_t gid)
+ 	if (gid == last_in && last_out >= 0)
+ 		return last_out;
+ 	if (ngroups < -1) {
++		gid_t mygid = MY_GID();
+ 		if ((ngroups = getgroups(0, NULL)) < 0)
+ 			ngroups = 0;
+ 		gidset = new_array(GETGROUPS_T, ngroups+1);
+@@ -166,11 +166,11 @@ static int is_in_group(gid_t gid)
+ 			ngroups = getgroups(ngroups, gidset);
+ 		/* The default gid might not be in the list on some systems. */
+ 		for (n = 0; n < ngroups; n++) {
+-			if (gidset[n] == our_gid)
++			if (gidset[n] == mygid)
+ 				break;
+ 		}
+ 		if (n == ngroups)
+-			gidset[ngroups++] = our_gid;
++			gidset[ngroups++] = mygid;
+ 		if (DEBUG_GTE(OWN, 2)) {
+ 			int pos;
+ 			char *gidbuf = new_array(char, ngroups*21+32);
+@@ -194,7 +194,13 @@ static int is_in_group(gid_t gid)
+ 	return last_out = 0;
+ 
+ #else
+-	return gid == our_gid;
++	static gid_t mygid = GID_NONE;
++	if (mygid == GID_NONE) {
++		mygid = MY_GID();
++		if (DEBUG_GTE(OWN, 2))
++			rprintf(FINFO, "process has gid %u\n", (unsigned)mygid);
++	}
++	return gid == mygid;
+ #endif
+ }
+ 
