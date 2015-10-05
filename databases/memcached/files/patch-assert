@@ -1,0 +1,11 @@
+--- items.c.orig	2015-10-05 14:44:10.000000000 +0300
++++ items.c	2015-10-05 14:44:14.000000000 +0300
+@@ -1138,7 +1138,7 @@
+     item **head, **tail;
+     assert(it->it_flags == 1);
+     assert(it->nbytes == 0);
+-    assert(it->slabs_clsid < LARGEST_ID);
++    //assert(it->slabs_clsid < LARGEST_ID);
+     head = &heads[it->slabs_clsid];
+     tail = &tails[it->slabs_clsid];
+ 
