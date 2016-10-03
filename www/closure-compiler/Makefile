@@ -12,8 +12,6 @@ COMMENT=	Closure Compiler
 
 LICENSE=	APACHE20
 
-BROKEN=		Unfetchable (google code has gone away)
-
 NO_BUILD=	yes
 NO_WRKSUBDIR=	yes
 SUB_FILES=	closure-compiler
